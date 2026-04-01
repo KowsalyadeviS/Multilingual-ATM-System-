@@ -1,0 +1,281 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Multilingual ATM System</title>
+
+<style>
+body { margin:0; font-family:Arial; background:black; color:white; }
+.atm { display:flex; justify-content:center; align-items:center; height:100vh; }
+.screen { width:750px; height:600px; background:#222; border-radius:15px; padding:20px; text-align:center; }
+
+#langButtons, #menuGrid, #keypad { display:grid; gap:10px; }
+#langButtons { grid-template-columns:repeat(4,1fr); }
+#menuGrid { grid-template-columns:repeat(2,1fr); }
+#keypad { grid-template-columns:repeat(3,1fr); }
+
+button { padding:15px; font-size:18px; border:none; border-radius:10px; background:cyan; cursor:pointer; }
+#keypad button { background:orange; }
+
+input { font-size:22px; padding:10px; width:80%; text-align:center; }
+
+.receipt { background:white; color:black; padding:15px; font-family:monospace; }
+</style>
+</head>
+
+<body>
+
+<div class="atm">
+<div class="screen">
+
+<h2 id="title">Welcome</h2>
+
+<div id="langPage">
+<p>Select Language</p>
+<div id="langButtons"></div>
+</div>
+
+<div id="menuPage" style="display:none;">
+<p id="menuText"></p>
+<div id="menuGrid">
+<button onclick="selectAction('Withdraw')" id="withdraw"></button>
+<button onclick="selectAction('Deposit')" id="deposit"></button>
+<button onclick="selectAction('Balance')" id="balance"></button>
+<button onclick="selectAction('Fast')" id="fast"></button>
+<button onclick="selectAction('Mini')" id="mini"></button>
+<button onclick="selectAction('ChangePin')" id="changepin"></button>
+<button onclick="goHome()" id="finishBtn"></button>
+</div>
+</div>
+
+<div id="pinPage" style="display:none;">
+<p id="pinText"></p>
+<input type="password" id="pin" readonly>
+<div id="keypad">
+<button onclick="press(1)">1</button><button onclick="press(2)">2</button><button onclick="press(3)">3</button>
+<button onclick="press(4)">4</button><button onclick="press(5)">5</button><button onclick="press(6)">6</button>
+<button onclick="press(7)">7</button><button onclick="press(8)">8</button><button onclick="press(9)">9</button>
+<button onclick="clearPin()">C</button><button onclick="press(0)">0</button><button onclick="verifyPin()">OK</button>
+</div>
+</div>
+
+<div id="amountPage" style="display:none;">
+<p id="amountText"></p>
+<input id="amount" readonly>
+<div id="keypad">
+<button onclick="addAmount(1)">1</button><button onclick="addAmount(2)">2</button><button onclick="addAmount(3)">3</button>
+<button onclick="addAmount(4)">4</button><button onclick="addAmount(5)">5</button><button onclick="addAmount(6)">6</button>
+<button onclick="addAmount(7)">7</button><button onclick="addAmount(8)">8</button><button onclick="addAmount(9)">9</button>
+<button onclick="clearAmount()">C</button><button onclick="addAmount(0)">0</button><button onclick="processTransaction()">OK</button>
+</div>
+</div>
+
+<div id="fastPage" style="display:none;">
+<p id="fastText"></p>
+<div id="menuGrid">
+<button onclick="fastCash(500)">₹500</button>
+<button onclick="fastCash(1000)">₹1000</button>
+<button onclick="fastCash(2000)">₹2000</button>
+<button onclick="fastCash(5000)">₹5000</button>
+<button onclick="fastCash(10000)">₹10000</button>
+<button onclick="otherAmount()" id="other"></button>
+</div>
+</div>
+
+<div id="miniPage" style="display:none;">
+<h2 id="miniTitle"></h2>
+<button onclick="goHome()" id="finishMini"></button>
+</div>
+
+<div id="changePinPage" style="display:none;">
+<p id="changePinText"></p>
+<input id="newPin" readonly>
+<div id="keypad">
+<button onclick="pinInput(1)">1</button><button onclick="pinInput(2)">2</button><button onclick="pinInput(3)">3</button>
+<button onclick="pinInput(4)">4</button><button onclick="pinInput(5)">5</button><button onclick="pinInput(6)">6</button>
+<button onclick="pinInput(7)">7</button><button onclick="pinInput(8)">8</button><button onclick="pinInput(9)">9</button>
+<button onclick="clearNew()">C</button><button onclick="pinInput(0)">0</button><button onclick="savePin()">OK</button>
+</div>
+</div>
+
+<div id="resultPage" style="display:none;">
+<h3 id="result"></h3>
+<p id="printAsk"></p>
+<button onclick="printReceipt()" id="yesBtn"></button>
+<button onclick="skipReceipt()" id="noBtn"></button>
+</div>
+
+<div id="receiptPage" style="display:none;">
+<div class="receipt" id="receiptBox"></div>
+<button onclick="goHome()" id="finish2"></button>
+</div>
+
+</div>
+</div>
+
+<script>
+
+// 🌍 15 LANGUAGES
+const lang = {
+English:{welcome:"Welcome",menu:"Select Transaction",pin:"Enter PIN",amount:"Enter Amount",success:"Transaction Successful",withdraw:"Withdraw",deposit:"Deposit",balance:"Check Balance",fast:"Fast Cash",mini:"Mini Statement",changepin:"Change PIN",finish:"Finish",print:"Print Receipt",other:"Other",yes:"Yes",no:"No",thank:"Thank you for the transaction"},
+Tamil:{welcome:"வரவேற்கிறோம்",menu:"சேவை தேர்வு",pin:"PIN உள்ளிடவும்",amount:"தொகை உள்ளிடவும்",success:"வெற்றி",withdraw:"பணம் எடுக்க",deposit:"பணம் செலுத்த",balance:"இருப்பு",fast:"விரைவு",mini:"சிறு அறிக்கை",changepin:"PIN மாற்றம்",finish:"முடிவு",print:"ரசீது",other:"மற்றவை",yes:"ஆம்",no:"இல்லை",thank:"பரிவர்த்தனைக்கு நன்றி"},
+Hindi:{welcome:"स्वागत है",menu:"लेनदेन चुनें",pin:"PIN दर्ज करें",amount:"राशि दर्ज करें",success:"सफल",withdraw:"निकासी",deposit:"जमा",balance:"बैलेंस",fast:"फास्ट",mini:"मिनी",changepin:"पिन बदलें",finish:"समाप्त",print:"रसीद",other:"अन्य",yes:"हाँ",no:"नहीं",thank:"लेनदेन के लिए धन्यवाद"},
+Telugu:{welcome:"స్వాగతం",menu:"ఎంపిక చేయండి",pin:"PIN నమోదు చేయండి",amount:"మొత్తం నమోదు చేయండి",success:"విజయం",withdraw:"తీసుకోండి",deposit:"జమ",balance:"బ్యాలెన్స్",fast:"ఫాస్ట్",mini:"మినీ",changepin:"PIN మార్చండి",finish:"ముగింపు",print:"రశీదు",other:"ఇతర",yes:"అవును",no:"కాదు",thank:"వ్యవహారానికి ధన్యవాదాలు"},
+Kannada:{welcome:"ಸ್ವಾಗತ",menu:"ಆಯ್ಕೆ",pin:"PIN ನಮೂದಿಸಿ",amount:"ಮೊತ್ತ ನಮೂದಿಸಿ",success:"ಯಶಸ್ವಿ",withdraw:"ಹಣ ತೆಗೆಯಿರಿ",deposit:"ಜಮಾ",balance:"ಬ್ಯಾಲೆನ್ಸ್",fast:"ಫಾಸ್ಟ್",mini:"ಮಿನಿ",changepin:"PIN ಬದಲಿಸಿ",finish:"ಮುಗಿಸಿ",print:"ರಸೀದಿ",other:"ಇತರೆ",yes:"ಹೌದು",no:"ಇಲ್ಲ",thank:"ವಹಿವಾಟಿಗೆ ಧನ್ಯವಾದಗಳು"},
+Malayalam:{welcome:"സ്വാഗതം",menu:"തിരഞ്ഞെടുക്കുക",pin:"പിൻ നൽകുക",amount:"തുക നൽകുക",success:"വിജയം",withdraw:"പിൻവലിക്കുക",deposit:"നിക്ഷേപിക്കുക",balance:"ബാലൻസ്",fast:"ഫാസ്റ്റ്",mini:"മിനി",changepin:"PIN മാറ്റുക",finish:"അവസാനം",print:"രസീത്",other:"മറ്റ്",yes:"അതെ",no:"ഇല്ല",thank:"ഇടപാടിന് നന്ദി"},
+Marathi:{welcome:"स्वागत आहे",menu:"व्यवहार निवडा",pin:"PIN टाका",amount:"रक्कम टाका",success:"यशस्वी",withdraw:"पैसे काढा",deposit:"जमा",balance:"बॅलन्स",fast:"फास्ट",mini:"मिनी",changepin:"PIN बदला",finish:"समाप्त",print:"पावती",other:"इतर",yes:"हो",no:"नाही",thank:"व्यवहारासाठी धन्यवाद"},
+Gujarati:{welcome:"સ્વાગત છે",menu:"પસંદ કરો",pin:"PIN દાખલ કરો",amount:"રકમ દાખલ કરો",success:"સફળ",withdraw:"ઉપાડો",deposit:"જમા",balance:"બેલેન્સ",fast:"ફાસ્ટ",mini:"મિની",changepin:"PIN બદલો",finish:"સમાપ્ત",print:"રસીદ",other:"અન્ય",yes:"હા",no:"ના",thank:"વ્યવહાર માટે આભાર"},
+Punjabi:{welcome:"ਸਵਾਗਤ ਹੈ",menu:"ਚੋਣ ਕਰੋ",pin:"PIN ਦਰਜ ਕਰੋ",amount:"ਰਕਮ ਦਰਜ ਕਰੋ",success:"ਸਫਲ",withdraw:"ਕੱਢੋ",deposit:"ਜਮ੍ਹਾਂ",balance:"ਬੈਲੈਂਸ",fast:"ਫਾਸਟ",mini:"ਮਿਨੀ",changepin:"PIN ਬਦਲੋ",finish:"ਮੁਕੰਮਲ",print:"ਰਸੀਦ",other:"ਹੋਰ",yes:"ਹਾਂ",no:"ਨਹੀਂ",thank:"ਲੈਣ-ਦੇਣ ਲਈ ਧੰਨਵਾਦ"},
+Bengali:{welcome:"স্বাগতম",menu:"নির্বাচন করুন",pin:"PIN লিখুন",amount:"টাকা লিখুন",success:"সফল",withdraw:"তুলুন",deposit:"জমা",balance:"ব্যালেন্স",fast:"ফাস্ট",mini:"মিনি",changepin:"PIN পরিবর্তন",finish:"শেষ",print:"রসিদ",other:"অন্যান্য",yes:"হ্যাঁ",no:"না",thank:"লেনদেনের জন্য ধন্যবাদ"},
+Odia:{welcome:"ସ୍ୱାଗତ",menu:"ଚୟନ",pin:"PIN ଭରଣ",amount:"ରାଶି ଭରଣ",success:"ସଫଳ",withdraw:"ଉଠାନ୍ତୁ",deposit:"ଜମା",balance:"ବ୍ୟାଲାନ୍ସ",fast:"ଫାସ୍ଟ",mini:"ମିନି",changepin:"PIN ପରିବର୍ତ୍ତନ",finish:"ସମାପ୍ତ",print:"ରସିଦ",other:"ଅନ୍ୟ",yes:"ହଁ",no:"ନା",thank:"ଲେନଦେନ ପାଇଁ ଧନ୍ୟବାଦ"},
+Assamese:{welcome:"স্বাগতম",menu:"বাছক",pin:"PIN প্ৰৱেশ",amount:"টকা ভৰাওক",success:"সফল",withdraw:"উঠাওক",deposit:"জমা",balance:"বেলেঞ্চ",fast:"ফাস্ট",mini:"মিনি",changepin:"PIN সলনি",finish:"সমাপ্ত",print:"ৰসিদ",other:"অন্যান্য",yes:"হয়",no:"নহয়",thank:"লেনদেনৰ বাবে ধন্যবাদ"},
+Urdu:{welcome:"خوش آمدید",menu:"منتخب کریں",pin:"PIN درج کریں",amount:"رقم درج کریں",success:"کامیاب",withdraw:"نکالیں",deposit:"جمع",balance:"بیلنس",fast:"فاسٹ",mini:"منی",changepin:"PIN تبدیل",finish:"ختم",print:"رسید",other:"دیگر",yes:"ہاں",no:"نہیں",thank:"لین دین کے لیے شکریہ"},
+Sanskrit:{welcome:"स्वागतम्",menu:"चयनयतु",pin:"PIN प्रविष्टं",amount:"राशिं प्रविष्टं",success:"सफलम्",withdraw:"गृह्णातु",deposit:"निक्षिपतु",balance:"शेषम्",fast:"शीघ्र",mini:"लघु",changepin:"PIN परिवर्तन",finish:"समापनम्",print:"रसीद",other:"अन्य",yes:"आम्",no:"न",thank:"व्यवहाराय धन्यवादः"},
+Nepali:{welcome:"स्वागत छ",menu:"छान्नुहोस्",pin:"PIN हाल्नुहोस्",amount:"रकम हाल्नुहोस्",success:"सफल",withdraw:"निकाल्नुहोस्",deposit:"जम्मा",balance:"ब्यालेन्स",fast:"फास्ट",mini:"मिनी",changepin:"PIN परिवर्तन",finish:"समाप्त",print:"रसिद",other:"अन्य",yes:"हो",no:"होइन",thank:"कारोबारका लागि धन्यवाद"}
+};
+
+// Native language names only
+const langNames = {
+English:"English",
+Tamil:"தமிழ்",
+Hindi:"हिन्दी",
+Telugu:"తెలుగు",
+Kannada:"ಕನ್ನಡ",
+Malayalam:"മലയാളം",
+Marathi:"मराठी",
+Gujarati:"ગુજરાતી",
+Punjabi:"ਪੰਜਾਬੀ",
+Bengali:"বাংলা",
+Odia:"ଓଡ଼ିଆ",
+Assamese:"অসমীয়া",
+Urdu:"اردو",
+Sanskrit:"संस्कृतम्",
+Nepali:"नेपाली"
+};
+
+const voiceMap={English:"en-IN",Tamil:"ta-IN",Hindi:"hi-IN",Telugu:"te-IN",Kannada:"kn-IN",Malayalam:"ml-IN",Marathi:"mr-IN",Gujarati:"gu-IN",Punjabi:"pa-IN",Bengali:"bn-IN",Odia:"or-IN",Assamese:"as-IN",Urdu:"ur-IN",Sanskrit:"hi-IN",Nepali:"ne-NP"};
+
+let current="English",action="",userPin="1234";
+
+function speak(t){
+ let m=new SpeechSynthesisUtterance(t);
+ m.lang=voiceMap[current];
+ speechSynthesis.cancel();
+ speechSynthesis.speak(m);
+}
+
+// ONLY native language buttons
+for(let l in lang){
+ let b=document.createElement("button");
+ b.innerText = langNames[l];
+ b.onclick=()=>selectLang(l);
+ document.getElementById("langButtons").appendChild(b);
+}
+
+function selectLang(l){
+ current=l;
+ title.innerText=lang[l].welcome;
+ menuText.innerText=lang[l].menu;
+ withdraw.innerText=lang[l].withdraw;
+ deposit.innerText=lang[l].deposit;
+ balance.innerText=lang[l].balance;
+ fast.innerText=lang[l].fast;
+ mini.innerText=lang[l].mini;
+ changepin.innerText=lang[l].changepin;
+ finishBtn.innerText=lang[l].finish;
+ finishMini.innerText=lang[l].finish;
+ finish2.innerText=lang[l].finish;
+ printAsk.innerText=lang[l].print+"?";
+ yesBtn.innerText=lang[l].yes;
+ noBtn.innerText=lang[l].no;
+ other.innerText=lang[l].other;
+
+ langPage.style.display="none";
+ menuPage.style.display="block";
+
+ speak(lang[l].welcome);
+ setTimeout(()=>speak(lang[l].menu),500);
+}
+
+function selectAction(a){
+ action=a;
+ menuPage.style.display="none";
+ pinPage.style.display="block";
+ pinText.innerText=lang[current].pin;
+ speak(lang[current].pin);
+}
+
+function press(n){ if(pin.value.length<4) pin.value+=n; }
+function clearPin(){ pin.value=""; }
+
+function verifyPin(){
+ if(pin.value===userPin){
+   pinPage.style.display="none";
+   if(action==="Fast"){ fastPage.style.display="block"; }
+   else if(action==="Mini"){ miniPage.style.display="block"; miniTitle.innerText=lang[current].mini; }
+   else if(action==="Balance"){ resultPage.style.display="block"; result.innerText="₹10000"; }
+   else if(action==="ChangePin"){ changePinPage.style.display="block"; }
+   else{
+     amountPage.style.display="block";
+     amountText.innerText=lang[current].amount;
+     speak(lang[current].amount);
+   }
+ } else alert("Wrong PIN");
+}
+
+function addAmount(n){ amount.value+=n; }
+function clearAmount(){ amount.value=""; }
+
+function processTransaction(){
+ amountPage.style.display="none";
+ resultPage.style.display="block";
+ result.innerText=lang[current].success;
+
+ setTimeout(()=>speak(lang[current].print),500);
+ setTimeout(()=>speak(lang[current].yes+" "+lang[current].no),1000);
+}
+
+function fastCash(v){
+ fastPage.style.display="none";
+ resultPage.style.display="block";
+ result.innerText=lang[current].success+" ₹"+v;
+
+ setTimeout(()=>speak(lang[current].print),500);
+ setTimeout(()=>speak(lang[current].yes+" "+lang[current].no),1000);
+}
+
+function otherAmount(){
+ fastPage.style.display="none";
+ amountPage.style.display="block";
+ speak(lang[current].amount);
+}
+
+function pinInput(n){ newPin.value+=n; }
+function clearNew(){ newPin.value=""; }
+
+function savePin(){
+ userPin=newPin.value;
+ alert("PIN Changed");
+ goHome();
+}
+
+function printReceipt(){
+ resultPage.style.display="none";
+ receiptPage.style.display="block";
+ receiptBox.innerText=lang[current].thank;
+ speak(lang[current].thank);
+}
+
+function skipReceipt(){
+ resultPage.style.display="none";
+ receiptPage.style.display="block";
+ receiptBox.innerText=lang[current].thank;
+ speak(lang[current].thank);
+}
+
+function goHome(){ location.reload(); }
+
+</script>
+
+</body>
+</html>
